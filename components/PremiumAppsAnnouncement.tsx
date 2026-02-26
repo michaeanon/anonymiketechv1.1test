@@ -2,28 +2,47 @@
 
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Zap } from 'lucide-react'
+import { X, Star } from 'lucide-react'
 import Link from 'next/link'
+import { premiumApps } from '@/lib/premium-apps-data'
 
 export default function PremiumAppsAnnouncement() {
   const [isOpen, setIsOpen] = useState(false)
   const [hasShown, setHasShown] = useState(false)
+  const [pageLoaded, setPageLoaded] = useState(false)
 
   useEffect(() => {
+    // Wait for page to fully load
+    const handlePageLoad = () => {
+      setPageLoaded(true)
+    }
+
+    // Check if page is already loaded
+    if (document.readyState === 'complete') {
+      setPageLoaded(true)
+    } else {
+      window.addEventListener('load', handlePageLoad)
+      return () => window.removeEventListener('load', handlePageLoad)
+    }
+  }, [])
+
+  useEffect(() => {
+    // Only show after page is fully loaded
+    if (!pageLoaded) return
+
     // Check if user has already seen the premium apps announcement
     const hasSeenPremiumAppsAnnouncement = localStorage.getItem('hasSeenPremiumAppsAnnouncement')
 
     if (!hasSeenPremiumAppsAnnouncement) {
-      // Wait for other popups/modals to finish (WelcomeModal, ValentinePopup, CookieConsent)
-      // These typically show around 800-2000ms, so we add extra buffer
+      // Wait for page to be completely loaded and interactive
       const timer = setTimeout(() => {
         setIsOpen(true)
         setHasShown(true)
-      }, 3500)
+      }, 1500)
 
       return () => clearTimeout(timer)
     }
-  }, [])
+  }, [pageLoaded])
 
   useEffect(() => {
     if (hasShown) {
@@ -35,111 +54,111 @@ export default function PremiumAppsAnnouncement() {
     setIsOpen(false)
   }
 
+  // Get 3 random recent apps to display
+  const recentApps = premiumApps.slice(0, 3)
+
   return (
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop */}
+          {/* Subtle Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={handleClose}
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40"
+            className="fixed inset-0 bg-black/20 backdrop-blur-xs z-40"
           />
 
-          {/* Modal */}
+          {/* Star-shaped Popup - Bottom Right Corner */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 30 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 30 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full mx-auto px-4 sm:px-6 max-w-sm sm:max-w-md md:max-w-lg"
+            initial={{ opacity: 0, scale: 0, rotate: -180 }}
+            animate={{ opacity: 1, scale: 1, rotate: 0 }}
+            exit={{ opacity: 0, scale: 0, rotate: 180 }}
+            transition={{ type: 'spring', damping: 20, stiffness: 300 }}
+            className="fixed bottom-8 right-8 z-50 w-80"
           >
-            <div className="relative rounded-lg sm:rounded-xl border border-hacker-green/50 overflow-hidden shadow-2xl shadow-hacker-green/30 bg-hacker-terminal/95 backdrop-blur-md">
+            {/* Rotating Star Background */}
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 20, repeat: Number.POSITIVE_INFINITY, ease: 'linear' }}
+              className="absolute inset-0 flex items-center justify-center"
+            >
+              <Star className="w-96 h-96 text-hacker-green/10 fill-hacker-green/5" />
+            </motion.div>
+
+            {/* Content Card */}
+            <div className="relative rounded-xl border border-hacker-green/50 overflow-hidden shadow-2xl shadow-hacker-green/20 bg-hacker-terminal/98 backdrop-blur-md p-4">
               {/* Animated background glow */}
               <div className="absolute inset-0 overflow-hidden">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-hacker-green/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
-                <div className="absolute bottom-0 left-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
+                <div className="absolute top-0 right-0 w-32 h-32 bg-hacker-green/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2"></div>
               </div>
 
+              {/* Close button */}
+              <button
+                onClick={handleClose}
+                className="absolute top-2 right-2 text-hacker-green-dim hover:text-hacker-green transition-colors z-10"
+                aria-label="Close announcement"
+              >
+                <X className="w-4 h-4" />
+              </button>
+
               {/* Content */}
-              <div className="relative z-10 px-4 sm:px-6 py-6 sm:py-8">
-                {/* Close button */}
-                <button
-                  onClick={handleClose}
-                  className="absolute top-3 right-3 sm:top-4 sm:right-4 text-hacker-green-dim hover:text-hacker-green transition-colors"
-                  aria-label="Close announcement"
-                >
-                  <X className="w-5 h-5 sm:w-6 sm:h-6" />
-                </button>
-
-                {/* Header with icon */}
-                <div className="flex items-start gap-3 sm:gap-4 mb-4 sm:mb-6">
-                  <div className="flex-shrink-0">
-                    <div className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-hacker-green/20 border border-hacker-green/40">
-                      <Zap className="w-6 h-6 sm:w-7 sm:h-7 text-hacker-green-bright animate-pulse" />
-                    </div>
-                  </div>
-                  <div className="flex-1">
-                    <h2 className="text-lg sm:text-2xl font-tech font-bold text-hacker-green-bright mb-1">
-                      NEW FEATURE!
-                    </h2>
-                    <p className="text-xs sm:text-sm text-hacker-green-dim font-mono">
-                      Premium Apps Store Now Available
-                    </p>
-                  </div>
-                </div>
-
-                {/* Main content */}
-                <div className="mb-6 sm:mb-8">
-                  <p className="text-sm sm:text-base text-hacker-green-bright mb-3 sm:mb-4 leading-relaxed">
-                    We just launched our Premium Apps Store featuring the latest premium modifications of your favorite apps!
-                  </p>
-
-                  {/* Featured apps */}
-                  <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-4 sm:mb-6">
-                    {[
-                      { icon: '💬', name: 'Telegram Premium' },
-                      { icon: '🎵', name: 'Spotify Premium' },
-                      { icon: '🎬', name: 'Flix Vision' },
-                      { icon: '☎️', name: 'Truecaller Pro' },
-                    ].map((app) => (
-                      <div
-                        key={app.name}
-                        className="px-2 sm:px-3 py-2 rounded border border-hacker-green/30 bg-hacker-terminal/50 hover:border-hacker-green/60 hover:bg-hacker-terminal/80 transition-all text-center"
-                      >
-                        <div className="text-base sm:text-lg mb-1">{app.icon}</div>
-                        <p className="text-xs font-tech text-hacker-green-dim">{app.name}</p>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="p-3 sm:p-4 rounded border border-hacker-green/20 bg-hacker-green/5 backdrop-blur-sm">
-                    <p className="text-xs sm:text-sm text-hacker-green font-mono">
-                      ✓ KSH 100 per app | ✓ M-Pesa payment | ✓ Instant access
-                    </p>
-                  </div>
-                </div>
-
-                {/* Action buttons */}
-                <div className="grid grid-cols-2 gap-2 sm:gap-3">
-                  <button
-                    onClick={handleClose}
-                    className="px-3 sm:px-4 py-2 sm:py-3 rounded text-xs sm:text-sm font-tech font-bold text-hacker-green border border-hacker-green/50 hover:border-hacker-green hover:bg-hacker-green/10 transition-all"
+              <div className="relative z-10">
+                {/* Header */}
+                <div className="mb-3 flex items-center gap-2">
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 3, repeat: Number.POSITIVE_INFINITY, ease: 'linear' }}
                   >
-                    Maybe Later
-                  </button>
-                  <Link href="/premium-apps">
-                    <button className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded text-xs sm:text-sm font-tech font-bold text-hacker-terminal bg-gradient-to-r from-hacker-green to-emerald-400 hover:shadow-lg hover:shadow-hacker-green/50 transition-all">
-                      Explore Now →
-                    </button>
-                  </Link>
+                    <Star className="w-5 h-5 text-hacker-green-bright fill-hacker-green-bright" />
+                  </motion.div>
+                  <h3 className="text-sm font-tech font-bold text-hacker-green-bright">
+                    NEW RELEASES
+                  </h3>
                 </div>
 
-                {/* Footer text */}
-                <p className="text-center mt-3 sm:mt-4 text-xs text-hacker-green-dim font-mono">
-                  {'// Get premium mods at unbeatable prices'}
+                <p className="text-xs text-hacker-green-dim font-mono mb-3 line-clamp-2">
+                  Check out our latest premium app releases
+                </p>
+
+                {/* Recent Apps Grid */}
+                <div className="space-y-2 mb-3">
+                  {recentApps.map((app) => (
+                    <motion.div
+                      key={app.id}
+                      whileHover={{ x: 4 }}
+                      className="p-2 rounded border border-hacker-green/20 bg-hacker-terminal/50 hover:border-hacker-green/50 transition-all cursor-pointer"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">{app.icon}</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-tech text-hacker-green-bright truncate">
+                            {app.name}
+                          </p>
+                          <p className="text-xs text-hacker-green-dim">
+                            KSH {app.price}
+                          </p>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+
+                {/* CTA Button */}
+                <Link href="/premium-apps" className="block">
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="w-full px-3 py-2 rounded text-xs font-tech font-bold text-hacker-terminal bg-gradient-to-r from-hacker-green to-emerald-400 hover:shadow-lg hover:shadow-hacker-green/40 transition-all"
+                  >
+                    Shop All →
+                  </motion.button>
+                </Link>
+
+                {/* Footer */}
+                <p className="text-center mt-2 text-xs text-hacker-green-dim font-mono">
+                  KSH 100 • M-Pesa
                 </p>
               </div>
             </div>
